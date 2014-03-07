@@ -508,6 +508,17 @@ function testVerifier() {
     assert.equal(verifier.verify(key, sigBuf), true);
 }
 
+function test_createPublicKeyFromParameters() {
+    var key = ursa.createPublicKey(fixture.PUBLIC_KEY);
+    var params = {
+        modulus: key.getModulus(),
+        exponent: key.getExponent()
+    };
+    var newKey = ursa.createPublicKeyFromParameters(params);
+    assert.equal(key.toPublicPem().toString('base64'),
+                 newKey.toPublicPem().toString('base64'));
+}
+
 /*
  * Main test script
  */
@@ -537,4 +548,5 @@ test_matchingPublicKeys();
 testSigner();
 testVerifier();
 
+test_createPublicKeyFromParameters();
 console.log("All tests pass!");

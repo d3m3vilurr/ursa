@@ -397,6 +397,8 @@ void RsaWrap::InitClass(Handle<Object> target) {
     BIND(proto, setPublicKeyPem,    SetPublicKeyPem);
     BIND(proto, sign,               Sign);
     BIND(proto, verify,             Verify);
+    BIND(proto, setModulus,         SetModulus);
+    BIND(proto, setExponent,        SetExponent);
 
     // Store the constructor in the target bindings.
     target->Set(className, Persistent<Function>::New(tpl->GetFunction()));
@@ -906,4 +908,54 @@ Handle<Value> RsaWrap::Verify(const Arguments& args) {
     }
 
     return True();
+}
+
+Handle<Value> RsaWrap::SetModulus(const Arguments& args) {
+    HandleScope scope;
+
+    RsaWrap *obj = ObjectWrap::Unwrap<RsaWrap>(args.Holder());
+    if (obj == NULL) { return Undefined(); }
+
+    Local<Object> modulus = args[0]->ToObject();
+    int modulusLength = node::Buffer::Length(modulus);
+    unsigned char *modulusData = (unsigned char *)malloc(modulusLength);
+    memcpy(modulusData, node::Buffer::Data(modulus), modulusLength);
+
+    if (obj->rsa == NULL) {
+        obj->rsa = RSA_new();
+        if (obj->rsa == NULL) {
+            scheduleSslException();
+            return Undefined();
+        }
+    }
+
+    obj->rsa->n = BN_bin2bn(modulusData, modulusLength, NULL);
+
+    free(modulusData);
+    return Undefined();
+}
+
+Handle<Value> RsaWrap::SetExponent(const Arguments& args) {
+    HandleScope scope;
+
+    RsaWrap *obj = ObjectWrap::Unwrap<RsaWrap>(args.Holder());
+    if (obj == NULL) { return Undefined(); }
+
+    Local<Object> exponent = args[0]->ToObject();
+    int exponentLength = node::Buffer::Length(exponent);
+    unsigned char *exponentData = (unsigned char *)malloc(exponentLength);
+    memcpy(exponentData, node::Buffer::Data(exponent), exponentLength);
+
+    if (obj->rsa == NULL) {
+        obj->rsa = RSA_new();
+        if (obj->rsa == NULL) {
+            scheduleSslException();
+            return Undefined();
+        }
+    }
+
+    obj->rsa->e = BN_bin2bn(exponentData, exponentLength, NULL);
+
+    free(exponentData);
+    return Undefined();
 }
