@@ -31,8 +31,8 @@ class RsaWrap : node::ObjectWrap {
     static v8::Handle<v8::Value> SetPublicKeyPem(const v8::Arguments& args);
     static v8::Handle<v8::Value> Sign(const v8::Arguments& args);
     static v8::Handle<v8::Value> Verify(const v8::Arguments& args);
-    static v8::Handle<v8::Value> SetModulus(const v8::Arguments& args);
-    static v8::Handle<v8::Value> SetExponent(const v8::Arguments& args);
+    static v8::Handle<v8::Value> SetPrivateParameters(const v8::Arguments& args);
+    static v8::Handle<v8::Value> SetPublicParameters(const v8::Arguments& args);
 
 
   private:

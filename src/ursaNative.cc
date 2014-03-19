@@ -397,8 +397,8 @@ void RsaWrap::InitClass(Handle<Object> target) {
     BIND(proto, setPublicKeyPem,    SetPublicKeyPem);
     BIND(proto, sign,               Sign);
     BIND(proto, verify,             Verify);
-    BIND(proto, setModulus,         SetModulus);
-    BIND(proto, setExponent,        SetExponent);
+    BIND(proto, setPrivateParameters, SetPrivateParameters);
+    BIND(proto, setPublicParameters, SetPublicParameters);
 
     // Store the constructor in the target bindings.
     target->Set(className, Persistent<Function>::New(tpl->GetFunction()));
@@ -910,16 +910,20 @@ Handle<Value> RsaWrap::Verify(const Arguments& args) {
     return True();
 }
 
-Handle<Value> RsaWrap::SetModulus(const Arguments& args) {
+#define SET_RSA_FIELD(obj, field, value) \
+    do { \
+        int length##field = node::Buffer::Length(value); \
+        unsigned char *data##field = (unsigned char *)malloc(length##field); \
+        memcpy(data##field, node::Buffer::Data(value), length##field); \
+        obj->rsa->field = BN_bin2bn(data##field, length##field, NULL); \
+        free(data##field); \
+    } while(0) \
+
+Handle<Value> RsaWrap::SetPrivateParameters(const Arguments& args) {
     HandleScope scope;
 
     RsaWrap *obj = ObjectWrap::Unwrap<RsaWrap>(args.Holder());
     if (obj == NULL) { return Undefined(); }
-
-    Local<Object> modulus = args[0]->ToObject();
-    int modulusLength = node::Buffer::Length(modulus);
-    unsigned char *modulusData = (unsigned char *)malloc(modulusLength);
-    memcpy(modulusData, node::Buffer::Data(modulus), modulusLength);
 
     if (obj->rsa == NULL) {
         obj->rsa = RSA_new();
@@ -929,22 +933,31 @@ Handle<Value> RsaWrap::SetModulus(const Arguments& args) {
         }
     }
 
-    obj->rsa->n = BN_bin2bn(modulusData, modulusLength, NULL);
+    Local<Object> n = args[0]->ToObject();
+    Local<Object> e = args[1]->ToObject();
+    Local<Object> d = args[2]->ToObject();
+    Local<Object> p = args[3]->ToObject();
+    Local<Object> q = args[4]->ToObject();
+    Local<Object> dmp = args[5]->ToObject();
+    Local<Object> dmq = args[6]->ToObject();
+    Local<Object> iqmp = args[7]->ToObject();
 
-    free(modulusData);
+    SET_RSA_FIELD(obj, n, n);
+    SET_RSA_FIELD(obj, e, e);
+    SET_RSA_FIELD(obj, d, d);
+    SET_RSA_FIELD(obj, p, p);
+    SET_RSA_FIELD(obj, q, q);
+    SET_RSA_FIELD(obj, dmp1, dmp);
+    SET_RSA_FIELD(obj, dmq1, dmq);
+    SET_RSA_FIELD(obj, iqmp, iqmp);
     return Undefined();
 }
 
-Handle<Value> RsaWrap::SetExponent(const Arguments& args) {
+Handle<Value> RsaWrap::SetPublicParameters(const Arguments& args) {
     HandleScope scope;
 
     RsaWrap *obj = ObjectWrap::Unwrap<RsaWrap>(args.Holder());
     if (obj == NULL) { return Undefined(); }
-
-    Local<Object> exponent = args[0]->ToObject();
-    int exponentLength = node::Buffer::Length(exponent);
-    unsigned char *exponentData = (unsigned char *)malloc(exponentLength);
-    memcpy(exponentData, node::Buffer::Data(exponent), exponentLength);
 
     if (obj->rsa == NULL) {
         obj->rsa = RSA_new();
@@ -954,8 +967,10 @@ Handle<Value> RsaWrap::SetExponent(const Arguments& args) {
         }
     }
 
-    obj->rsa->e = BN_bin2bn(exponentData, exponentLength, NULL);
+    Local<Object> n = args[0]->ToObject();
+    Local<Object> e = args[1]->ToObject();
 
-    free(exponentData);
+    SET_RSA_FIELD(obj, n, n);
+    SET_RSA_FIELD(obj, e, e);
     return Undefined();
 }
